@@ -5,7 +5,7 @@ from underthesea import sent_tokenize
 from typing import Dict, List, Set, Tuple, Union
 
 
-class SelfCheckBERTScore:
+class BERTScoreModel:
     """
     SelfCheckGPT (BERTScore variant): Checking LLM's text against its own sampled texts via BERTScore (against best-matched sampled sentence)
     """
