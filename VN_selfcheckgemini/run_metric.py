@@ -19,7 +19,7 @@ def read_csv(path):
 
     for col in df.columns[2:]:
         df[col] = df[col].apply(lambda x: ast.literal_eval(x))
-    return Dataset.from_pandas(df)
+    return Dataset.from_pandas(df.head(3))
 def unroll_pred(scores, indices):
     unrolled = []
     for idx in indices:
@@ -41,11 +41,8 @@ for idx, i_ in enumerate(range(len(dataset))):
     if average_score < 0.99:
         human_label_detect_False_h[idx] = (raw_label > 0.99).astype(np.int32).tolist()
 
-selfcheck_scores_avg_list = []
-selfcheck_scores_max_list = []
-n_gram = 5
-selfcheck_scores_avg = {} # average sentence-level scores
-selfcheck_scores_max = {} # max sentence-level scores
+selfcheck_scores_list = []
+selfcheck_scores = {} 
 for i in tqdm(range(len(dataset))):
     x = dataset[i]
     selfcheck_scores_ = BERTScoreModel().predict(
@@ -53,10 +50,10 @@ for i in tqdm(range(len(dataset))):
         sampled_passages=x['gemini_text_samples']
     )
 
-    selfcheck_scores_avg[i] = selfcheck_scores_
+    selfcheck_scores[i] = selfcheck_scores_
 
-selfcheck_scores_avg_list.append(selfcheck_scores_avg)
-selfcheck_scores_avg = selfcheck_scores_avg_list[0]
+selfcheck_scores_list.append(selfcheck_scores)
+selfcheck_scores_avg = selfcheck_scores_list[0]
 
 def tmp_fix(selfcheck_scores):
     for i in range(len(selfcheck_scores)):
@@ -65,7 +62,7 @@ def tmp_fix(selfcheck_scores):
                 if v[j] > 10e5:
                     selfcheck_scores[i][k][j] = 10e5
 
-tmp_fix(selfcheck_scores_avg_list)
+tmp_fix(selfcheck_scores_list)
 
 
 
@@ -106,4 +103,4 @@ def generate_table_results(selfcheck_scores):
 
     return df
 
-generate_table_results(selfcheck_scores_max_list)
+print(generate_table_results(selfcheck_scores_list))
