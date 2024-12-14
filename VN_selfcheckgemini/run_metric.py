@@ -78,29 +78,25 @@ def get_PR_with_human_labels(preds, human_labels, pos_label=1, oneminus_pred=Fal
     return P, R
 
 def generate_table_results(selfcheck_scores):
-    df = pd.DataFrame(columns=['n-gram', 'NoFac', 'NoFac*', 'Fac'])
-    for idx, n in enumerate(range(1, n_gram + 1)):
-        selfcheck_scores_ = selfcheck_scores[idx]
-        try:
-            df.loc[idx, 'n-gram'] = n
+    df = pd.DataFrame(columns=['NoFac', 'NoFac*', 'Fac'])
+    selfcheck_scores_ = selfcheck_scores[0]
+    try:
 
-            Prec, Rec = get_PR_with_human_labels(selfcheck_scores_, human_label_detect_False, pos_label=1)
-            df.loc[idx, 'NoFac'] = auc(Rec, Prec)*100
+        Prec, Rec = get_PR_with_human_labels(selfcheck_scores_, human_label_detect_False, pos_label=1)
+        df.loc[idx, 'NoFac'] = auc(Rec, Prec)*100
 
-            print(df.loc[idx, 'NoFac'])
+        print(df.loc[idx, 'NoFac'])
 
-            Prec, Rec = get_PR_with_human_labels(selfcheck_scores_, human_label_detect_False_h, pos_label=1)
-            df.loc[idx, 'NoFac*'] = auc(Rec, Prec)*100
+        Prec, Rec = get_PR_with_human_labels(selfcheck_scores_, human_label_detect_False_h, pos_label=1)
+        df.loc[idx, 'NoFac*'] = auc(Rec, Prec)*100
 
-            print(df.loc[idx, 'NoFac*'])
+        print(df.loc[idx, 'NoFac*'])
 
-            Prec, Rec = get_PR_with_human_labels(selfcheck_scores_, human_label_detect_True, pos_label=1, oneminus_pred=True)
-            df.loc[idx, 'Fac'] = auc(Rec, Prec)*100
+        Prec, Rec = get_PR_with_human_labels(selfcheck_scores_, human_label_detect_True, pos_label=1, oneminus_pred=True)
+        df.loc[idx, 'Fac'] = auc(Rec, Prec)*100
 
-        except Exception as e:
-            print(e)
-            continue
-
+    except Exception as e:
+        print(e)
     return df
 
 print(generate_table_results(selfcheck_scores_list))
