@@ -40,7 +40,7 @@ class BERTScoreModel:
         for s in range(num_samples):
             sample_passage = sampled_passages[s]
             sentences_sample = [sent for sent in self.nlp(sample_passage)] # List[spacy.tokens.span.Span]
-            sentences_sample = [sent.text.strip() for sent in sentences_sample if len(sent) > 3]
+            sentences_sample = [sent.strip() for sent in sentences_sample if len(sent) > 3]
             num_sentences_sample  = len(sentences_sample)
 
             refs  = expand_list1(sentences, num_sentences_sample) # r1,r1,r1,....
