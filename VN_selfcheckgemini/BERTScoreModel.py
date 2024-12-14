@@ -9,7 +9,7 @@ class BERTScoreModel:
     """
     SelfCheckGPT (BERTScore variant): Checking LLM's text against its own sampled texts via BERTScore (against best-matched sampled sentence)
     """
-    def __init__(self, default_model="others", rescale_with_baseline=True):
+    def __init__(self, default_model="bert-base-multilingual-cased", rescale_with_baseline=True):
         """
         :default_model: model for BERTScore
         :rescale_with_baseline:
@@ -20,6 +20,7 @@ class BERTScoreModel:
         self.nlp = sent_tokenize
         self.default_model = default_model # en => roberta-large
         self.rescale_with_baseline = rescale_with_baseline
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         print("SelfCheck-BERTScore initialized")
 
     @torch.no_grad()
@@ -48,8 +49,10 @@ class BERTScoreModel:
 
             P, R, F1 = bert_score.score(
                     cands, refs,
-                    lang=self.default_model, verbose=False,
+                     verbose=False,
                     rescale_with_baseline=self.rescale_with_baseline,
+                    device=self.device,
+                    model_name_or_path=self.default_model
             )
             F1_arr = F1.reshape(num_sentences, num_sentences_sample)
             F1_arr_max_axis1 = F1_arr.max(axis=1).values

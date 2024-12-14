@@ -7,6 +7,7 @@ from tqdm.notebook import tqdm
 from datasets import Dataset
 from sklearn.metrics import precision_recall_curve, auc
 import matplotlib.pyplot as plt
+import torch
 
 label_mapping = {
     'accurate': 0.0,
@@ -43,9 +44,11 @@ for idx, i_ in enumerate(range(len(dataset))):
 
 selfcheck_scores_list = []
 selfcheck_scores = {} 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model = BERTScoreModel().to(device)
 for i in tqdm(range(len(dataset))):
     x = dataset[i]
-    selfcheck_scores_ = BERTScoreModel().predict(
+    selfcheck_scores_ = model.predict(
         sentences=x['gemini_sentences'],
         sampled_passages=x['gemini_text_samples']
     )
