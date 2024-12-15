@@ -52,7 +52,7 @@ class BERTScoreModel:
                      verbose=False,
                     rescale_with_baseline=self.rescale_with_baseline,
                     device=self.device,
-                    model_name_or_path=self.default_model
+                    model_type=self.default_model
             )
             F1_arr = F1.reshape(num_sentences, num_sentences_sample)
             F1_arr_max_axis1 = F1_arr.max(axis=1).values

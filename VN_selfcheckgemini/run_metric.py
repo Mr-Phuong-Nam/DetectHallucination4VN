@@ -20,7 +20,7 @@ def read_csv(path):
 
     for col in df.columns[2:]:
         df[col] = df[col].apply(lambda x: ast.literal_eval(x))
-    return Dataset.from_pandas(df.head(3))
+    return Dataset.from_pandas(df)
 def unroll_pred(scores, indices):
     unrolled = []
     for idx in indices:
@@ -45,7 +45,7 @@ for idx, i_ in enumerate(range(len(dataset))):
 selfcheck_scores_list = []
 selfcheck_scores = {} 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model = BERTScoreModel().to(device)
+model = BERTScoreModel()  # No need to call .to(device) here
 for i in tqdm(range(len(dataset))):
     x = dataset[i]
     selfcheck_scores_ = model.predict(
