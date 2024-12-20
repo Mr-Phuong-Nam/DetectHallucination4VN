@@ -1,4 +1,3 @@
-
 from typing import List
 import numpy as np
 import torch
@@ -127,6 +126,7 @@ class MQAGModel:
         return np.array(sent_scores)
 
     def question_generation_sentence_level(
+        self,  # Add self here
         g1_model,
         g1_tokenizer,
         g2_model,
@@ -192,6 +192,7 @@ class MQAGModel:
             questions.append(question_item)
         return questions
     def answering(
+        sefl,
         a_model,
         a_tokenizer,
         question,
@@ -212,6 +213,7 @@ class MQAGModel:
         prob = torch.softmax(answering_outputs['logits'], dim=-1)[0].cpu().numpy()
         return prob
     def answerability_scoring(
+        self,
         u_model,
         u_tokenizer,
         question,
