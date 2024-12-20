@@ -1,4 +1,5 @@
 from BERTScoreModel import BERTScoreModel
+from MQAGModel import MQAGModel  # Import MQAGModel
 import ast
 import pandas as pd
 import numpy as np
@@ -8,6 +9,7 @@ from datasets import Dataset
 from sklearn.metrics import precision_recall_curve, auc
 import matplotlib.pyplot as plt
 import torch
+import argparse  # Import argparse for argument parsing
 
 label_mapping = {
     'accurate': 0.0,
@@ -27,47 +29,12 @@ def unroll_pred(scores, indices):
         unrolled.extend(scores[idx])
     return unrolled
 
-dataset = read_csv('../Data/File/Vietnamese_hallucination_annotated.csv')
-
-
-human_label_detect_False   = {}
-human_label_detect_False_h = {}
-human_label_detect_True    = {}
-for idx, i_ in enumerate(range(len(dataset))):
-    dataset_i = dataset[i_]
-    raw_label = np.array([label_mapping[x] for x in dataset_i['annotation']])
-    human_label_detect_False[idx] = (raw_label > 0.499).astype(np.int32).tolist()
-    human_label_detect_True[idx]  = (raw_label < 0.499).astype(np.int32).tolist()
-    average_score = np.mean(raw_label)
-    if average_score < 0.99:
-        human_label_detect_False_h[idx] = (raw_label > 0.99).astype(np.int32).tolist()
-
-selfcheck_scores_list = []
-selfcheck_scores = {} 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model = BERTScoreModel()  # No need to call .to(device) here
-for i in tqdm(range(len(dataset))):
-    x = dataset[i]
-    selfcheck_scores_ = model.predict(
-        sentences=x['gemini_sentences'],
-        sampled_passages=x['gemini_text_samples']
-    )
-
-    selfcheck_scores[i] = selfcheck_scores_
-
-selfcheck_scores_list.append(selfcheck_scores)
-selfcheck_scores_avg = selfcheck_scores_list[0]
-
 def tmp_fix(selfcheck_scores):
     for i in range(len(selfcheck_scores)):
         for k, v in selfcheck_scores[i].items():
             for j in range(len(v)):
                 if v[j] > 10e5:
                     selfcheck_scores[i][k][j] = 10e5
-
-tmp_fix(selfcheck_scores_list)
-
-
 
 def get_PR_with_human_labels(preds, human_labels, pos_label=1, oneminus_pred=False):
     indices = [k for k in human_labels.keys()]
@@ -102,4 +69,58 @@ def generate_table_results(selfcheck_scores):
         print(e)
     return df
 
-print(generate_table_results(selfcheck_scores_list))
+def main():
+    parser = argparse.ArgumentParser(description="Run hallucination detection metrics")
+    parser.add_argument('--model', type=str, choices=['MQAG', 'BERTScore'], required=True, help="Choose the model to use: MQAG or BERTScore")
+    args = parser.parse_args()
+
+    dataset = read_csv('../Data/File/Vietnamese_hallucination_annotated.csv')
+
+    human_label_detect_False = {}
+    human_label_detect_False_h = {}
+    human_label_detect_True = {}
+    for idx, i_ in enumerate(range(len(dataset))):
+        dataset_i = dataset[i_]
+        raw_label = np.array([label_mapping[x] for x in dataset_i['annotation']])
+        human_label_detect_False[idx] = (raw_label > 0.499).astype(np.int32).tolist()
+        human_label_detect_True[idx] = (raw_label < 0.499).astype(np.int32).tolist()
+        average_score = np.mean(raw_label)
+        if average_score < 0.99:
+            human_label_detect_False_h[idx] = (raw_label > 0.99).astype(np.int32).tolist()
+
+    selfcheck_scores_list = []
+    selfcheck_scores = {}
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    if args.model == 'BERTScore':
+        model = BERTScoreModel()  # No need to call .to(device) here
+    elif args.model == 'MQAG':
+        model = MQAGModel(device=device)
+    else:
+        raise ValueError("Invalid model name")
+
+    for i in tqdm(range(len(dataset))):
+        x = dataset[i]
+        if args.model == 'BERTScore':
+            selfcheck_scores_ = model.predict(
+                sentences=x['gemini_sentences'],
+                sampled_passages=x['gemini_text_samples']
+            )
+        elif args.model == 'MQAG':
+            selfcheck_scores_ = model.predict(
+                sentences=x['gemini_sentences'],
+                passage=x['gemini_text'],
+                sampled_passages=x['gemini_text_samples']
+            )
+
+        selfcheck_scores[i] = selfcheck_scores_
+
+    selfcheck_scores_list.append(selfcheck_scores)
+    selfcheck_scores_avg = selfcheck_scores_list[0]
+
+    tmp_fix(selfcheck_scores_list)
+
+    print(generate_table_results(selfcheck_scores_list))
+
+if __name__ == "__main__":
+    main()

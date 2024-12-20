@@ -8,7 +8,7 @@ from utils import MQAGConfig
 
 
 
-class SelfCheckMQAG:
+class MQAGModel:
     """
     SelfCheckGPT (MQAG varaint): Checking LLM's text against its own sampled texts via MultipleChoice Question Answering
     """
