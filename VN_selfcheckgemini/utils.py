@@ -1,5 +1,14 @@
 import numpy as np
 # SelfCheck - BERTScore utils
+
+
+class MQAGConfig:
+    generation1_squad: str = "potsawee/t5-large-generation-squad-QuestionAnswer"
+    generation1_race: str = "potsawee/t5-large-generation-race-QuestionAnswer"
+    generation2: str = "potsawee/t5-large-generation-race-Distractor"
+    answering: str = "potsawee/longformer-large-4096-answering-race"
+    answerability: str = "potsawee/longformer-large-4096-answerable-squad2"
+
 def expand_list1(mylist, num):
     expanded = []
     for x in mylist:

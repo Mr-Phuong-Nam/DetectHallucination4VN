@@ -4,6 +4,7 @@ import numpy as np
 import torch
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, LongformerTokenizer, LongformerForMultipleChoice, LongformerForSequenceClassification
 from utils import prepare_qa_input, prepare_distractor_input, prepare_answering_input, method_simple_counting, method_vanilla_bayes, method_bayes_with_alpha
+from utils import MQAGConfig
 
 
 
