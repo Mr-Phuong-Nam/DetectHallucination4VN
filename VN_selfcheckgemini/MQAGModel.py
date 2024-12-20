@@ -192,7 +192,7 @@ class MQAGModel:
             questions.append(question_item)
         return questions
     def answering(
-        sefl,
+        self,
         a_model,
         a_tokenizer,
         question,
