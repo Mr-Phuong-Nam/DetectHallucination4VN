@@ -18,14 +18,16 @@ def get_summary(name):
     except Exception as e:
         return f"Error: {e}"
 
-file_names = ["geographical_places_dataset_2.csv", "historical_figures_dataset.csv"]
+file_names = ["geographical_places_dataset_2.csv", "historical_figures_dataset.csv", "Vietnamese_hallucination_34_annotated.csv"]
 
-working_file = input("Enter the file name: (1 - Geographical Places, 2 - Historical Figures): ")
+working_file = input("Enter the file name: (1 - Geographical Places, 2 - Historical Figures, 3 - Vietnamese Hallucination): ")
 
 if working_file == "1":
     file_name = file_names[0]
 elif working_file == "2":
     file_name = file_names[1]
+elif working_file == "3":
+    file_name = file_names[2]
 else:
     print("Invalid input. Please try again.")
     exit()
@@ -76,39 +78,34 @@ if working_state == "1":
         exit()
 elif working_state == "2":
     print("Reviewing...")
+    double_check_df = pd.DataFrame(columns=['title', 'sentence', 'old_annotation', 'new_annotation', 'note'])
     try:
-        print("List of titles:")
-        for title in df['title']:
-            print(f"\t[-] {title}")
-        tittle = input("Enter the title to review: ")
-        for index, row in df.iterrows():
-            if row['title'] != tittle:
-                continue
+        
+        while True:
+            print("List of titles:")
+            for i, title in enumerate(df['title']):
+                print(f"\t[{i}] {title}")
+            index = int(input("Enter the index of the title to review: "))
             print("===============================================")
-            print(f"[+] Title: {row['title']}")
-            print(f"[+] Gemini Text: \n{row['gemini_text']}")
-            while True:
-                num = int(input("Enter the sentence number to review (0 to skip)"))
-                if num == 0:
-                    break
-                if len(row['annotation']) < num:
-                    print("Invalid sentence number.")
-                    continue
-                print(f"\t[-] Sentence {num}: {row['gemini_sentences'][num-1]}")
-                print(f"\t[-] Annotation: {row['annotation'][num-1]}")
-                print(f"\t[-] Note: {row['annotation_note'][num-1]}")
-                annotate = input("\t[-->] Annotate? (Y/N): ")
-                if annotate.lower() == "n":
-                    continue
-                annotation = input("\t[-->] New Annotation: ")
-                if annotation != "0":
-                    note = input("\t[-->] Note: ")
-                    df.at[index, 'annotation_note'][num-1] = note
-                df.at[index, 'annotation'][num-1] = annotation
+            print(f"[+] Title: {df.at[index, 'title']}")
+            print(f"[+] Gemini Text: \n{df.at[index, 'gemini_text']}")
+            for i, sentences in enumerate(df.at[index, 'gemini_sentences']):
+                print(f"\t[-] Sentence {i+1}: {sentences}")
+                print(f"\t[-->] Annotation: {df.at[index, 'annotation'][i]}")
+                print(f"\t[-->] Note: {df.at[index, 'annotation_note'][i]}")
+                is_continue = input("Continue? (y/n): ")
+                if is_continue == "n":
+                    continue    
+                elif is_continue == "y":
+                    new_annotation = input("New annotation: ")
+                    note = input("Note: ")
+                    double_check_df = pd.concat([double_check_df, pd.DataFrame([{'title': df.at[index, 'title'], 'sentence': sentences, 'old_annotation': df.at[index, 'annotation'][i], 'new_annotation': new_annotation, 'note': note}])], ignore_index=True)
+                    
+        
     except KeyboardInterrupt:
         print("Interrupted by user.")
         print("Saving the dataset...")
-        df.to_csv(file_name, index=False)
+        double_check_df.to_csv("double_check.csv", index=False)
         print("Dataset saved.")
         exit()
 else:
