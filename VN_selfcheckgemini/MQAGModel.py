@@ -4,8 +4,7 @@ import torch
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, LongformerTokenizer, LongformerForMultipleChoice, LongformerForSequenceClassification
 from utils import prepare_qa_input, prepare_distractor_input, prepare_answering_input, method_simple_counting, method_vanilla_bayes, method_bayes_with_alpha
 from utils import MQAGConfig
-
-
+import re
 
 class MQAGModel:
     """
@@ -118,7 +117,7 @@ class MQAGModel:
                 elif scoring_method == 'bayes':
                     score = method_vanilla_bayes(prob, u_score, prob_s, u_score_s, num_samples, beta1=kwargs['beta1'], beta2=kwargs['beta2'], AT=kwargs['AT'])
                 elif scoring_method == 'bayes_with_alpha':
-                    score = method_bayes_with_alpha(prob, u_score, prob_s, u_score_s, num_samples, beta1=kwargs['beta1'], beta2=kwargs['beta2'])
+                    score = method_bayes_with_alpha(prob, u_score, prob_s, u_score_s, num_samples, beta1=0.8, beta2=0.8)
                 scores.append(score)
             sent_score = np.mean(scores)
             sent_scores.append(sent_score)
