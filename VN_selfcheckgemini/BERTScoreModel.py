@@ -9,13 +9,13 @@ class BERTScoreModel:
     """
     SelfCheckGPT (BERTScore variant): Checking LLM's text against its own sampled texts via BERTScore (against best-matched sampled sentence)
     """
-    def __init__(self, default_model="bert-base-multilingual-cased", rescale_with_baseline=True):
+    def __init__(self, default_model="vi", rescale_with_baseline=False):
         """
         :default_model: model for BERTScore
         :rescale_with_baseline:
             - whether or not to rescale the score. If False, the values of BERTScore will be very high
             - this issue was observed and later added to the BERTScore package,
-            - see https://github.com/Tiiiger/bert_score/blob/master/journal/rescale_baseline.md
+            - see https://github.com/Tiiiger/bert_score/blob/master/journal/rThe inter-annotator agreementescale_baseline.md
         """
         self.nlp = sent_tokenize
         self.default_model = default_model # en => roberta-large
@@ -49,10 +49,10 @@ class BERTScoreModel:
 
             P, R, F1 = bert_score.score(
                     cands, refs,
-                     verbose=False,
+                    verbose=False,
                     rescale_with_baseline=self.rescale_with_baseline,
                     device=self.device,
-                    model_type=self.default_model
+                    lang=self.default_model,
             )
             F1_arr = F1.reshape(num_sentences, num_sentences_sample)
             F1_arr_max_axis1 = F1_arr.max(axis=1).values
@@ -62,4 +62,5 @@ class BERTScoreModel:
 
         bertscore_mean_per_sent = bertscore_array.mean(axis=-1)
         one_minus_bertscore_mean_per_sent = 1.0 - bertscore_mean_per_sent
+        print("One minus BERTScore mean per sentence:", one_minus_bertscore_mean_per_sent)
         return one_minus_bertscore_mean_per_sent

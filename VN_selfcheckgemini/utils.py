@@ -9,19 +9,19 @@ class MQAGConfig:
     answering: str = "potsawee/longformer-large-4096-answering-race"
     answerability: str = "potsawee/longformer-large-4096-answerable-squad2"
 
-def expand_list1(mylist, num):
-    expanded = []
-    for x in mylist:
-        for _ in range(num):
-            expanded.append(x)
-    return expanded
-
-def expand_list2(mylist, num):
-    expanded = []
-    for _ in range(num):
+    def expand_list1(mylist, num):
+        expanded = []
         for x in mylist:
-            expanded.append(x)
-    return expanded
+            for _ in range(num):
+                expanded.append(x)
+        return expanded
+
+    def expand_list2(mylist, num):
+        expanded = []
+        for _ in range(num):
+            for x in mylist:
+                expanded.append(x)
+        return expanded
 
 
 def prepare_qa_input(t5_tokenizer, context, device):
