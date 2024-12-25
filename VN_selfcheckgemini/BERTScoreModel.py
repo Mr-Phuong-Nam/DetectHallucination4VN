@@ -60,7 +60,17 @@ class BERTScoreModel:
 
             bertscore_array[:,s] = F1_arr_max_axis1
 
-        bertscore_mean_per_sent = bertscore_array.mean(axis=-1)
-        one_minus_bertscore_mean_per_sent = 1.0 - bertscore_mean_per_sent
-        print("One minus BERTScore mean per sentence:", one_minus_bertscore_mean_per_sent)
-        return one_minus_bertscore_mean_per_sent
+        # bertscore_mean_per_sent = bertscore_array.mean(axis=-1)
+        # one_minus_bertscore_mean_per_sent = 1.0 - bertscore_mean_per_sent
+        # print("One minus BERTScore mean per sentence:", one_minus_bertscore_mean_per_sent)
+        # return one_minus_bertscore_mean_per_sent
+        return bertscore_array
+    
+class SimpleRescaleBaseline:
+    # This class is used to rescale the BERTScore values to 0-1 by min-max scaling
+    def __init__(self, min=0.0, max=1.0):
+        self.min = min
+        self.max = max
+    def rescale(self, bert_score_array):
+        return (bert_score_array - self.min) / (self.max - self.min)
+    

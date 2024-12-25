@@ -1,4 +1,4 @@
-from BERTScoreModel import BERTScoreModel
+from BERTScoreModel import BERTScoreModel, SimpleRescaleBaseline
 from MQAGModel import MQAGModel  # Import MQAGModel
 import ast
 import pandas as pd
@@ -23,6 +23,7 @@ def read_csv(path):
     for col in df.columns[2:]:
         df[col] = df[col].apply(lambda x: ast.literal_eval(x))
     return Dataset.from_pandas(df)
+
 def unroll_pred(scores, indices):
     unrolled = []
     for idx in indices:
@@ -30,11 +31,10 @@ def unroll_pred(scores, indices):
     return unrolled
 
 def tmp_fix(selfcheck_scores):
-    for i in range(len(selfcheck_scores)):
-        for k, v in selfcheck_scores[i].items():
-            for j in range(len(v)):
-                if v[j] > 10e5:
-                    selfcheck_scores[i][k][j] = 10e5
+    for k, v in selfcheck_scores.items():
+        for j in range(len(v)):
+            if v[j] > 10e5:
+                selfcheck_scores[k][j] = 10e5
 
 def get_PR_with_human_labels(preds, human_labels, pos_label=1, oneminus_pred=False):
     indices = [k for k in human_labels.keys()]
@@ -47,27 +47,24 @@ def get_PR_with_human_labels(preds, human_labels, pos_label=1, oneminus_pred=Fal
     P, R, thre = precision_recall_curve(unroll_labels, unroll_preds, pos_label=pos_label)
     return P, R
 
-def generate_table_results(selfcheck_scores):
-    df = pd.DataFrame(columns=['NoFac', 'NoFac*', 'Fac'])
-    selfcheck_scores_ = selfcheck_scores[0]
-    try:
+def plot_PR_curve(human_labels, R, P, title, model_name):
+    arr = []
+    for k, v in human_labels.items():
+        arr.extend(v)
+    random_baseline = np.mean(arr)
+    plt.figure()
+    plt.hlines(y=random_baseline, xmin=0, xmax=1.0, color='grey', linestyles='dotted', label='Random')
+    plt.plot(R, P, marker='-', label=model_name)
+    plt.xlabel('Recall')
+    plt.ylabel('Precision')
+    plt.title(title)
+    plt.legend()
+    # display plot to notebook
+    plt.show()
 
-        Prec, Rec = get_PR_with_human_labels(selfcheck_scores_, human_label_detect_False, pos_label=1)
-        df.loc[idx, 'NoFac'] = auc(Rec, Prec)*100
+# def generate_table_results(selfcheck_scores, human_label_detect_False, human_label_detect_False_h, human_label_detect_True):
 
-        print(df.loc[idx, 'NoFac'])
-
-        Prec, Rec = get_PR_with_human_labels(selfcheck_scores_, human_label_detect_False_h, pos_label=1)
-        df.loc[idx, 'NoFac*'] = auc(Rec, Prec)*100
-
-        print(df.loc[idx, 'NoFac*'])
-
-        Prec, Rec = get_PR_with_human_labels(selfcheck_scores_, human_label_detect_True, pos_label=1, oneminus_pred=True)
-        df.loc[idx, 'Fac'] = auc(Rec, Prec)*100
-
-    except Exception as e:
-        print(e)
-    return df
+#     return noFactAuc, noFactHAuc, factAuc
 
 def main():
     parser = argparse.ArgumentParser(description="Run hallucination detection metrics")
@@ -88,7 +85,6 @@ def main():
         if average_score < 0.99:
             human_label_detect_False_h[idx] = (raw_label > 0.99).astype(np.int32).tolist()
 
-    selfcheck_scores_list = []
     selfcheck_scores = {}
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -102,25 +98,57 @@ def main():
     for i in tqdm(range(len(dataset))):
         x = dataset[i]
         if args.model == 'BERTScore':
-            selfcheck_scores_ = model.predict(
+            bert_score_array = model.predict(
                 sentences=x['gemini_sentences'],
                 sampled_passages=x['gemini_text_samples']
             )
+            selfcheck_scores[i] = bert_score_array
         elif args.model == 'MQAG':
             selfcheck_scores_ = model.predict(
                 sentences=x['gemini_sentences'],
                 passage=x['gemini_text'],
                 sampled_passages=x['gemini_text_samples']
             )
+            selfcheck_scores[i] = selfcheck_scores_
 
-        selfcheck_scores[i] = selfcheck_scores_
+        # selfcheck_scores[i] = selfcheck_scores_
+    
+    if args.model == 'BERTScore':
+        min = 1.0
+        max = 0.0
+        for bert_score_array in selfcheck_scores.values():
+            min = min if min < bert_score_array.min() else bert_score_array.min()
+            max = max if max > bert_score_array.max() else bert_score_array.max()
+        rescale = SimpleRescaleBaseline(min, max)
+        for k, v in selfcheck_scores.items():
+            bert_score_array = rescale.rescale(v)
+            bert_score_per_sent = bert_score_array.mean(axis=-1)
+            one_minus_bert_score_per_sent = 1.0 - bert_score_per_sent
+            selfcheck_scores[k] = one_minus_bert_score_per_sent
+            
+    tmp_fix(selfcheck_scores)
 
-    selfcheck_scores_list.append(selfcheck_scores)
-    selfcheck_scores_avg = selfcheck_scores_list[0]
+    try:
 
-    tmp_fix(selfcheck_scores_list)
+        Prec, Rec = get_PR_with_human_labels(selfcheck_scores, human_label_detect_False, pos_label=1)
+        noFactAuc =  auc(Rec, Prec)*100
+        print("No Fact AUC:", noFactAuc)
+        plot_PR_curve(human_label_detect_False, Rec, Prec, 'No Fact PR Curve', args.model)
 
-    print(generate_table_results(selfcheck_scores_list))
+
+        Prec, Rec = get_PR_with_human_labels(selfcheck_scores, human_label_detect_False_h, pos_label=1)
+        noFactHAuc = auc(Rec, Prec)*100
+        print("No Fact H AUC:", noFactHAuc)
+        plot_PR_curve(human_label_detect_False_h, Rec, Prec, 'No Fact H PR Curve', args.model)
+
+
+        Prec, Rec = get_PR_with_human_labels(selfcheck_scores, human_label_detect_True, pos_label=1, oneminus_pred=True)
+        factAuc = auc(Rec, Prec)*100
+        print("Fact AUC:", factAuc)
+        plot_PR_curve(human_label_detect_True, Rec, Prec, 'Fact PR Curve', args.model)
+
+    except Exception as e:
+        print(e)
 
 if __name__ == "__main__":
     main()

@@ -78,7 +78,10 @@ if working_state == "1":
         exit()
 elif working_state == "2":
     print("Reviewing...")
-    double_check_df = pd.DataFrame(columns=['title', 'sentence', 'old_annotation', 'new_annotation', 'note'])
+    if os.path.exists("File/double_check.csv"):
+        double_check_df = pd.read_csv("File/double_check.csv")
+    else:
+        double_check_df = pd.DataFrame(columns=['title', 'sentence', 'old_annotation', 'new_annotation', 'note'])
     try:
         
         while True:
@@ -105,7 +108,7 @@ elif working_state == "2":
     except KeyboardInterrupt:
         print("Interrupted by user.")
         print("Saving the dataset...")
-        double_check_df.to_csv("double_check.csv", index=False)
+        double_check_df.to_csv("File/double_check.csv", index=False)
         print("Dataset saved.")
         exit()
 else:
