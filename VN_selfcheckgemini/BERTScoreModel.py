@@ -68,9 +68,11 @@ class BERTScoreModel:
     
 class SimpleRescaleBaseline:
     # This class is used to rescale the BERTScore values to 0-1 by min-max scaling
-    def __init__(self, min=0.0, max=1.0):
-        self.min = min
-        self.max = max
-    def rescale(self, bert_score_array):
-        return (bert_score_array - self.min) / (self.max - self.min)
+  
+
+    def MinMaxScaler(self, bert_score_array, min, max):
+        return (bert_score_array - min) / (max - min)
+    
+    def StandardScaler(self, bert_score_array, mean, std):
+        return (bert_score_array - mean) / std
     
