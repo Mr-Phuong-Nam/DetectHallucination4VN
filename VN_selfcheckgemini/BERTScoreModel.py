@@ -73,6 +73,4 @@ class SimpleRescaleBaseline:
     def MinMaxScaler(self, bert_score_array, min, max):
         return (bert_score_array - min) / (max - min)
     
-    def StandardScaler(self, bert_score_array, mean, std):
-        return (bert_score_array - mean) / std
     
