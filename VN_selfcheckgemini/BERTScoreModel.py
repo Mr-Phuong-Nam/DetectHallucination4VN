@@ -70,7 +70,7 @@ class SimpleRescaleBaseline:
     # This class is used to rescale the BERTScore values to 0-1 by min-max scaling
   
 
-    def MinMaxScaler(self, bert_score_array, min, max):
-        return (bert_score_array - min) / (max - min)
+    def MinMaxScaler(self, bert_score_array, min):
+        return (bert_score_array - min) / (1 - min)
     
     
