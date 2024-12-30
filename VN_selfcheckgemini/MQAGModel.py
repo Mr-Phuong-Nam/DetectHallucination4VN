@@ -189,7 +189,7 @@ class MQAGModel:
                 'options': options,
             }
             questions.append(question_item)
-            print("question item: ", question_item)
+            # print("question item: ", question_item)
         return questions
     def answering(
         self,
@@ -211,7 +211,7 @@ class MQAGModel:
         )
         answering_outputs = a_model(**answering_given_passage)
         prob = torch.softmax(answering_outputs['logits'], dim=-1)[0].cpu().numpy()
-        print("prob: ", prob)
+        # print("prob: ", prob)
         return prob
     def answerability_scoring(
         self,
@@ -231,5 +231,5 @@ class MQAGModel:
         logits = u_model(**inputs).logits
         logits = logits.squeeze(-1)
         prob = torch.sigmoid(logits).item()
-        print("aswerability: ", prob)
+        # print("aswerability: ", prob)
         return prob
