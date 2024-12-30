@@ -189,7 +189,7 @@ class MQAGModel:
                 'options': options,
             }
             questions.append(question_item)
-            print("question item: " question_item)
+            print("question item: ", question_item)
         return questions
     def answering(
         self,
